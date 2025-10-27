@@ -3,18 +3,39 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Create() {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    file: null,
+  });
+
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: files ? files[0] : value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!formData.title.trim()) return;
+
+    const data = new FormData();
+    data.append('title', formData.title);
+    data.append('description', formData.description);
+    if (formData.file) data.append('file', formData.file);
+
     try {
-      await axios.post('http://localhost:8080/todo', { title, description });
+      await axios.post('http://localhost:8080/todo', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       navigate('/');
     } catch (err) {
-      console.error('Failed to create todo');
+      console.error('Failed to create todo', err);
     }
   };
 
@@ -32,23 +53,33 @@ export default function Create() {
           <h1 className="text-3xl font-bold text-indigo-700 mb-4">Create New Todo</h1>
 
           <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
             placeholder="Title"
             className="w-full px-4 py-3 rounded-md bg-white/50 backdrop-blur-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-300"
             required
           />
 
           <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
             placeholder="Description"
             className="w-full px-4 py-3 rounded-md bg-white/50 backdrop-blur-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-300"
           />
 
+          <input
+            type="file"
+            name="file"
+            accept="image/*"
+            onChange={handleChange}
+            className="w-full px-4 py-3 rounded-md bg-white/50 backdrop-blur-sm border border-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          />
+
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold rounded-md shadow-lg hover:scale-105 transition transform"
+            className="w-full py-3 bg-linear-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold rounded-md shadow-lg hover:scale-105 transition transform"
           >
             Create Todo
           </button>
